@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0b0d12"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-title" content="HUBZE Video">
 <script>try{if(/iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent)||(matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen.height)<600))location.replace('phone.html'+location.search)}catch(e){}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HUBZE Video Studio</title>
@@ -249,11 +249,12 @@ textarea:focus,.inp:focus{border-color:var(--accent)}
 @media (max-width:1560px){.fmt span{display:none}#pname{width:150px}#saved span{display:none}#saved{min-width:0}}
 @media (max-width:1250px){#app{grid-template-columns:84px 300px minmax(0,1fr) 300px}.brand span,#saved span{display:none}#pname{width:150px}}
 @media (max-width:980px){body{grid-template-rows:auto minmax(0,1fr) 340px}#top{flex-wrap:wrap;padding:8px}#app{grid-template-columns:76px minmax(0,1fr)}#left,#right{display:none}#app.showleft #left{display:block;position:fixed;left:76px;top:68px;bottom:340px;width:300px;z-index:20}}
+@media (max-width:1400px){#top .installBtn{display:none}}
 </style>
 </head>
 <body>
 <header id="top">
-  <div class="brandWrap"><button class="brand" id="brandBtn"><b>HUBZE</b> <span>Video</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button><div id="appMenu"><div class="am-h">Appearance</div><div class="am-row"><span>Color Theme:</span><div class="sw" id="swUI"></div></div><div class="am-row"><span>Workspace:</span><div class="sw" id="swWS"></div></div><button class="btn sm" id="amReset" style="margin-top:6px">Reset to default</button></div></div>
+  <div class="brandWrap"><button class="brand" id="brandBtn"><b>HUBZE</b> <span>Video</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button><div id="appMenu"><div class="am-h">Appearance</div><div class="am-row"><span>Color Theme:</span><div class="sw" id="swUI"></div></div><div class="am-row"><span>Workspace:</span><div class="sw" id="swWS"></div></div><button class="btn sm" id="amReset" style="margin-top:6px">Reset to default</button><button class="btn sm primary installBtn" onclick="installApp()" style="margin-top:6px;margin-left:6px">⬇ Install as app</button></div></div>
   <input id="pname" value="My Video" spellcheck="false">
   <button class="ib" id="undoBtn" title="Undo (⌘Z)"></button>
   <button class="ib" id="redoBtn" title="Redo (⇧⌘Z)"></button>
@@ -261,6 +262,7 @@ textarea:focus,.inp:focus{border-color:var(--accent)}
   <label class="fmt"><span>Size</span><select id="fmtSel"></select></label>
   <div id="saved"><i></i><span>Saved</span></div>
   <button class="ib" id="helpBtn" title="How it works" style="font-weight:800;font-size:18px">?</button>
+  <button class="btn installBtn" onclick="installApp()" title="Install HUBZE Video as an app">⬇ Install app</button>
   <button class="btn" id="homeBtn">Projects</button>
   <button class="btn" id="newBtn">New</button>
   <button class="btn primary" id="exportBtn"></button>
@@ -364,7 +366,7 @@ textarea:focus,.inp:focus{border-color:var(--accent)}
   <button class="btn primary full" data-close style="margin-top:12px">Got it</button>
 </div></div>
 
-<div id="home"><aside><div class="hbrand">HUBZE <span>Video</span></div><button class="btn primary" id="hNew">+ Create a New Project</button></aside>
+<div id="home"><aside><div class="hbrand">HUBZE <span>Video</span></div><button class="btn primary" id="hNew">+ Create a New Project</button><button class="btn installBtn" onclick="installApp()">⬇ Install app</button></aside>
 <section><div class="hbar"><span>Sort By</span><select id="hSort"><option value="date">Date Modified</option><option value="name">Name</option></select><button class="ib" id="hDir" style="font-size:20px"></button></div><div id="hGrid"></div></section></div>
 <div class="modal" id="scrModal"><div class="card" style="width:min(1100px,94vw)"></div></div>
 <div id="toast"></div>
@@ -1480,7 +1482,25 @@ addEventListener('click',()=>{$('#appMenu').classList.remove('on');$('#brandBtn'
 $('#amReset').onclick=()=>{setPref('hv_ui','default');setPref('hv_ws','default');applyTheme()};
 applyTheme();
 (()=>{const pm=$('#p-media'),dz=$('#dropZone'),ml=$('#mediaList');pm.append(Sec('Upload',dz),Sec('Your media',ml))})();
-(async()=>{initStatic();
+
+/* ============ install as app ============ */
+let deferredInstall=null;const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+if(location.protocol.startsWith('http')&&'serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;updInstallBtns()});
+addEventListener('appinstalled',()=>{deferredInstall=null;updInstallBtns();toast('HUBZE Video installed — find it in your apps')});
+function updInstallBtns(){document.querySelectorAll('.installBtn').forEach(b=>b.style.display=isStandalone()?'none':'')}
+async function installApp(){if(deferredInstall){deferredInstall.prompt();try{await deferredInstall.userChoice}catch(e){}deferredInstall=null;return}
+ const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),mac=/Macintosh/.test(ua)&&!ios,safari=/Safari/.test(ua)&&!/Chrome|CriOS|Edg|FxiOS/.test(ua),chrome=/Chrome|CriOS/.test(ua)&&!/Edg/.test(ua);
+ let steps;if(location.protocol==='file:')steps=['This copy is opened from a file on your computer.','Open the HUBZE Video website link instead, then press Install app again.'];
+ else if(ios&&!safari)steps=['Open this page in Safari (installing only works there on iPhone/iPad).','Tap the Share button (square with an arrow).','Tap “Add to Home Screen”, then Add.'];
+ else if(ios)steps=['Tap the Share button (square with an arrow) at the bottom.','Scroll down and tap “Add to Home Screen”.','Tap Add — HUBZE Video appears on your home screen.'];
+ else if(mac&&safari)steps=['In the menu bar, click File.','Click “Add to Dock”, then Add.','HUBZE Video now opens from your Dock.'];
+ else if(chrome)steps=['Click the ⋮ menu (top right of Chrome).','Choose “Cast, save and share” → “Install page as app”.','Click Install — HUBZE Video gets its own window and icon.'];
+ else steps=['Open this page in Google Chrome or Safari.','Then press Install app again.'];
+ let m=$('#installModal');if(!m){m=h('div',{class:'modal',id:'installModal',onclick:e=>{if(e.target===m||e.target.closest('[data-close]'))m.classList.remove('on')}});document.body.append(m)}
+ m.innerHTML='';m.append(h('div',{class:'card'},h('h2',{},'Install HUBZE Video'),h('p',{class:'sub'},'Get it as an app with its own icon — no app store needed.'),h('div',{class:'steps'},steps.map((t,i)=>h('div',{},h('b',{},String(i+1)),t))),h('button',{class:'btn primary full','data-close':''},'Got it')));m.classList.add('on')}
+
+(async()=>{initStatic();updInstallBtns();
  try{await IDB.open();projIndex=(await IDB.get('kv','projects'))||[];const old=await IDB.get('kv','project');
   if(old){const id=uid();await IDB.put('kv','proj:'+id,old);let nm='My Video';try{nm=JSON.parse(old).name||nm}catch(e){}projIndex.push({id,name:nm,updated:Date.now(),thumb:''});await IDB.put('kv','projects',projIndex);await IDB.del('kv','project')}}
  catch(e){dbOK=false;console.warn('Autosave unavailable',e)}
